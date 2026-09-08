@@ -59,7 +59,7 @@ def main():
         scans = scans_resp.get("scans") or []
         pci_scans = [
             s for s in scans
-            if "pci" in s.get("name", "").lower() or "asv" in s.get("name", "").lower()
+            if "pci" in (s.get("name") or "").lower() or "asv" in (s.get("name") or "").lower()
         ]
         if pci_scans:
             for s in pci_scans:
@@ -80,7 +80,7 @@ def main():
         templates = templates_resp.get("templates") or []
         pci_templates = [
             t for t in templates
-            if "pci" in t.get("name", "").lower() or "pci" in t.get("title", "").lower()
+            if "pci" in (t.get("name") or "").lower() or "pci" in (t.get("title") or "").lower()
         ]
         if pci_templates:
             for t in pci_templates:
@@ -103,7 +103,7 @@ def main():
         policies = policies_resp.get("policies") or []
         pci_policies = [
             p for p in policies
-            if "pci" in p.get("name", "").lower() or "asv" in p.get("name", "").lower()
+            if "pci" in (p.get("name") or "").lower() or "asv" in (p.get("name") or "").lower()
         ]
         if pci_policies:
             for p in pci_policies:

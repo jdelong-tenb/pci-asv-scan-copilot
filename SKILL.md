@@ -56,7 +56,7 @@ Do not proceed to Phase 3 until `mcp__tenable-vpod__scan_status` returns `comple
 
 Call `mcp__tenable-vpod__scan_results` with the completed scan_id. Retrieve per-host detail with `mcp__tenable-vpod__scan_host_details`.
 
-After pulling scan results, first check for PCI compliance verdict plugins: plugin 33929 (NOT COMPLIANT) means the scan failed; plugin 33930 (COMPLIANT) means the scan passed. If 33930 is present, no remediation is needed. If 33929 is present, proceed to analyze the individual findings below.
+After pulling scan results, first check for PCI compliance verdict plugins: plugin 33929 (NOT COMPLIANT) means the scan failed; plugin 33930 (COMPLIANT) means the scan passed. If 33930 is present, this scan itself needs no further remediation — that alone doesn't certify overall PCI compliance, so confirm with your QSA before treating attestation as complete. If 33929 is present, proceed to analyze the individual findings below.
 
 For each finding with severity 2 (medium) or higher in the scan results. Note: scan_results returns integer severity levels (0=info through 4=critical), not CVSS scores. Call `mcp__tenable-vpod__plugins_get_plugin_details` for each severity >= 2 finding to get the actual CVSS base score — findings with CVSS base score >= 4.0 block PCI attestation. Call `mcp__tenable-vpod__plugins_get_plugin_details` to get the full plugin description, CVSS score, CVEs, and solution. Note: plugins do not include PCI DSS requirement cross-references — use the mapping table below to associate findings with DSS requirements.
 
@@ -113,7 +113,7 @@ Before submitting, confirm:
 Call `mcp__tenable-vpod__workbenches_list_assets_with_vulnerabilities` and cross-check against the target list from Phase 1. Any host in scope that does not appear in the results needs to be explained: was it unreachable during the scan window? Is it explicitly excluded with documented justification?
 
 **2. No unresolved CVSS ≥ 4.0 findings.**
-Call `mcp__tenable-vpod__scan_results` and count findings with severity medium or higher. Per PCI DSS Req 11.3.2.1, an ASV scan passes only when there are no vulnerabilities with CVSS base score ≥ 4.0 that are not covered by an accepted dispute or compensating control.
+Call `mcp__tenable-vpod__scan_results` and count findings with severity medium or higher. Per the PCI ASV Program Guide, an ASV scan passes only when there are no vulnerabilities with CVSS base score ≥ 4.0 that are not covered by an accepted dispute or compensating control.
 
 **3. Dispute documentation is complete.**
 For each finding identified in Phase 4 as a dispute candidate, confirm the user has the required evidence assembled and has submitted the dispute through their ASV's dispute process.
@@ -150,5 +150,5 @@ The scan must have been completed within the past 90 days. Confirm the scan_resu
 - **Not a QSA.** This skill gives technical guidance on scan setup and finding interpretation. It does not constitute PCI DSS compliance advice — your Qualified Security Assessor (QSA) is the authoritative source on what passes and what requires a dispute.
 - **ASV dispute acceptance is your ASV's decision.** This skill can identify dispute candidates and help you assemble documentation, but the ASV makes the final acceptance call. Tenable's ASV dispute process is separate from this skill.
 - **Scope completeness relies on what you tell the skill.** The skill can only verify that the hosts you put into the scan were scanned — it cannot discover hosts you didn't know were in scope. Conduct your own scoping exercise first.
-- **CVSS ≥ 4.0 is the standard PCI threshold.** PCI DSS v4.0 Req 11.3.2.1 specifies CVSS base score — some ASVs apply additional criteria. Confirm with your ASV.
+- **CVSS ≥ 4.0 is the standard PCI threshold.** This comes from the PCI ASV Program Guide, not the text of DSS Req 11.3.2.1 itself (which governs external scan cadence/re-scans) — some ASVs apply additional criteria on top of it. Confirm with your ASV.
 - **External scan positioning matters.** External ASV scans must be conducted from outside the CDE network perimeter. Confirm your Tenable scanner is positioned (or cloud-hosted) to scan from an external vantage point.
