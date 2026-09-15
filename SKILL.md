@@ -26,13 +26,23 @@ If none exists, call `mcp__tenable-vpod__policy_templates` to find the PCI ASV s
 - "I need to configure a PCI external scan"
 - "Walk me through PCI scan setup"
 
+**Scan configuration health check:**
+
+Before proceeding to Phase 2, validate the planned configuration against three common failure modes:
+
+1. **Target list must be non-empty.** If the user hasn't provided targets, stop and prompt again.
+2. **External scan, external targets.** Flag any RFC1918 addresses (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) in the target list. An external ASV scan cannot reach private addresses from outside the network — these targets will return no findings, which will not produce a valid compliance verdict. Ask the user to confirm they meant these addresses or correct to public IPs. This check applies to external ASV scans only — if the user selected the internal PCI template ("agent_pci_internal"), RFC1918 targets are expected and should not be flagged.
+3. **PCI template confirmed.** Verify the selected template is the PCI ASV template, not "basic network scan," "advanced scan," or any agent-based template. A wrong template will not produce the 33929/33930 compliance verdict plugins required for attestation.
+
+If any check fails, resolve it before creating the scan.
+
 ## Phase 2 — Launch and monitor
 
 Once scope and policy are confirmed, create the scan:
 
 Call `mcp__tenable-vpod__scan_create` with:
 - `name`: "PCI Quarterly External Scan - [YYYY-QN]"
-- `targets`: JSON array of IP/hostname/CIDR strings (e.g., `["192.168.1.1", "10.0.0.0/24"]`) from Phase 1
+- `targets`: JSON array of IP/hostname/CIDR strings (e.g., `["203.0.113.1", "198.51.100.0/24"]`) from Phase 1
 - `template`: "pci" (the PCI ASV scan template name)
 
 Confirm the scan was created (note the scan_id), then launch it:
@@ -127,6 +137,15 @@ The scan must have been completed within the past 90 days. Confirm the scan_resu
 - **Conditional — disputes pending:** CVSS ≥ 4.0 findings exist but all are flagged as disputes with documentation in progress. Cannot submit until the ASV accepts the dispute(s).
 - **Not ready — findings to remediate:** List the specific findings (plugin ID, host, CVSS score) that must be fixed, ordered by CVSS score descending.
 
+**5. Scan deadline and quarterly cadence.**
+
+Surface the compliance window explicitly — users routinely miss the 90-day expiry:
+
+- State: "This scan was completed on [completion date from scan_results]. Your next ASV scan must be completed by [completion date + 90 days] to maintain continuous PCI compliance. That is N days from today."
+- Call `mcp__tenable-vpod__scan_list_scans` and filter for prior completed PCI/ASV scans sorted by date. If the prior scan's completion date is more than 90 days before this scan's completion date, there was a gap in quarterly compliance — flag it: "Your previous PCI scan completed [date], which is more than 90 days before this scan completed. A QSA may ask about this gap — document the reason."
+- Note: PCI requires one passing scan per calendar quarter — the 90-day validity window is not a substitute for the quarterly cadence requirement. A scan on March 1 and a re-scan on March 30 are both in Q1 and do not satisfy Q2.
+- If no prior PCI scan is found, note: "No prior PCI ASV scan found in this account. This appears to be your first scan — confirm with your QSA that attestation history requirements are met."
+
 **Example user prompts:**
 - "Am I ready to submit my PCI attestation?"
 - "Check if my scan passes for attestation"
@@ -144,6 +163,7 @@ The scan must have been completed within the past 90 days. Confirm the scan_resu
 - `mcp__tenable-vpod__workbenches_list_assets_with_vulnerabilities` — check asset coverage
 - `mcp__tenable-vpod__workbenches_get_vulnerability_outputs` — raw scanner output for dispute evidence (returns actual detected output text; essential for dispute cases)
 - `mcp__tenable-vpod__plugins_get_plugin_details` — full plugin description, CVSS score, CVEs, and solution text per finding
+- `mcp__tenable-vpod__scan_list_scans` — find prior PCI/ASV scans for quarterly cadence check (Phase 5)
 
 ## Known limitations
 
